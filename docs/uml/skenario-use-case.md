@@ -43,16 +43,14 @@
 **Alur utama**
 1. Pengelola resep membuka isian untuk mencatat resep.
 2. Sistem menampilkan isian resep.
-3. Pengelola resep mengisi resep tetapi membiarkan setidaknya satu atribut wajib kosong.
-4. Sistem menerima permintaan penyimpanan untuk divalidasi.
-5. Pengelola resep meminta sistem menyimpan resep.
-6. Sistem menunjukkan atribut yang belum lengkap dan tidak menyimpan resep.
+3. Pengelola resep mengisi resep dengan setidaknya satu atribut wajib kosong, lalu meminta sistem menyimpan.
+4. Sistem menunjukkan atribut yang belum lengkap dan tidak menyimpan resep.
 
 **Alur alternatif**
 - Setelah pemberitahuan, pengelola resep melengkapi semua atribut wajib dan meminta penyimpanan kembali. Sistem menyimpan resep dengan nilai yang dimasukkan.
 
 **Pengecualian**
-- Pengelola resep tetap tidak melengkapi satu atau lebih atribut wajib. Sistem tidak menyimpan resep.
+- Pengelola resep menutup atau meninggalkan isian tanpa melengkapi satu atau lebih atribut wajib. Resep tetap tidak tersimpan.
 
 **Pascakondisi**
 - Resep tidak tersimpan selama atribut wajib belum lengkap; jika dilengkapi dan disimpan kembali, resep tersimpan.

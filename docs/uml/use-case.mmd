@@ -1,0 +1,15 @@
+flowchart LR
+    Pengelola["Pengelola resep"]
+    Pengguna["Pengguna resep"]
+
+    subgraph Aplikasi["Aplikasi pengelolaan resep"]
+        UC01(["UC-01 / UC-02<br/>Mencatat resep"])
+        UC03(["UC-03<br/>Menemukan resep cocok"])
+        UC04(["UC-04<br/>Melihat keadaan tanpa hasil"])
+        UC05(["UC-05<br/>Membaca rincian resep"])
+    end
+
+    Pengelola --> UC01
+    Pengguna --> UC03
+    Pengguna --> UC04
+    Pengguna --> UC05
