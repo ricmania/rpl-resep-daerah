@@ -10,7 +10,8 @@ Dokumen ini merangkum kebutuhan fungsional awal untuk mencatat, menemukan, dan m
 
 ### KF-01 — Mencatat resep
 
-**Prioritas:** Must (usulan)  
+**Prioritas:** Must (usulan)
+
 **Deskripsi:** Pengelola resep dapat mencatat nama resep, bahan, dan langkah. Atribut wajib resep belum ditetapkan.
 
 **Kriteria penerimaan**
@@ -20,7 +21,8 @@ Dokumen ini merangkum kebutuhan fungsional awal untuk mencatat, menemukan, dan m
 
 ### KF-02 — Menemukan dan membaca resep
 
-**Prioritas:** Must (usulan)  
+**Prioritas:** Must (usulan)
+
 **Deskripsi:** Pengguna dapat menemukan resep tersimpan dan membaca rincian nama, bahan, dan langkah. Bidang pencarian dan aturan kecocokan belum ditetapkan.
 
 **Kriteria penerimaan**
