@@ -1,0 +1,15 @@
+flowchart TD
+    Mulai([Mulai])
+    Buka["Pengelola memilih untuk mencatat resep"]
+    Form["Sistem menampilkan isian resep"]
+    Isi["Pengelola mengisi nama, bahan, langkah,<br/>dan atribut wajib yang telah disepakati"]
+    Kirim["Pengelola meminta resep disimpan"]
+    Validasi{"Apakah semua atribut wajib<br/>yang disepakati sudah diisi?"}
+    Pesan["Sistem menunjukkan atribut<br/>yang belum lengkap"]
+    Perbaiki["Pengelola melengkapi atribut yang kurang"]
+    Simpan["Sistem menyimpan resep dengan nilai yang dimasukkan"]
+    Selesai([Selesai])
+
+    Mulai --> Buka --> Form --> Isi --> Kirim --> Validasi
+    Validasi -- "Tidak" --> Pesan --> Perbaiki --> Kirim
+    Validasi -- "Ya" --> Simpan --> Selesai
