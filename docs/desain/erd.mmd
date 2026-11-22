@@ -1,0 +1,29 @@
+erDiagram
+    RESEP ||--o{ RESEP_BAHAN : memiliki
+    BAHAN ||--o{ RESEP_BAHAN : digunakan
+    RESEP ||--o{ LANGKAH_RESEP : memiliki
+
+    RESEP {
+        int id PK
+        string nama
+    }
+
+    BAHAN {
+        int id PK
+        string nama
+    }
+
+    RESEP_BAHAN {
+        int id PK
+        int resep_id FK
+        int bahan_id FK
+        float jumlah
+        string satuan
+    }
+
+    LANGKAH_RESEP {
+        int id PK
+        int resep_id FK, UK
+        int urutan UK
+        string instruksi
+    }
