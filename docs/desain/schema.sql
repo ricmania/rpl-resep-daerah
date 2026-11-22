@@ -14,7 +14,10 @@ CREATE TABLE resep_bahan (
     id INTEGER PRIMARY KEY,
     resep_id INTEGER NOT NULL REFERENCES resep(id),
     bahan_id INTEGER NOT NULL REFERENCES bahan(id),
-    jumlah REAL CHECK (jumlah IS NULL OR jumlah > 0),
+    jumlah REAL CHECK (
+        jumlah IS NULL
+        OR (typeof(jumlah) IN ('integer', 'real') AND jumlah > 0)
+    ),
     satuan TEXT CHECK (satuan IS NULL OR length(trim(satuan)) > 0)
 );
 
