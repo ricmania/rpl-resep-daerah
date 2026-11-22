@@ -5,6 +5,7 @@ import secrets
 import sqlite3
 from functools import wraps
 from pathlib import Path
+from time import time as epoch_time
 
 from flask import (
     Flask,
@@ -27,6 +28,20 @@ import services
 PROJECT_ROOT = Path(__file__).resolve().parent
 CSRF_COOKIE_NAME = "csrf_token"
 CSRF_TOKEN_MAX_AGE = 86400
+LOGIN_ATTEMPT_WINDOW_SECONDS = 300
+LOGIN_MAX_FAILURES = 5
+
+
+def environment_flag(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    normalized = value.strip().casefold()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise RuntimeError(f"Nilai environment {name} harus berupa boolean.")
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
@@ -38,16 +53,29 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
             str(PROJECT_ROOT / "instance" / "resep.db"),
         ),
         SCHEMA=str(PROJECT_ROOT / "docs" / "desain" / "schema.sql"),
+        APP_ENV=os.environ.get("APP_ENV", "development").strip().casefold(),
+        DEBUG=environment_flag("APP_DEBUG", False),
         SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SECURE=environment_flag("SESSION_COOKIE_SECURE", True),
         SESSION_COOKIE_SAMESITE="Lax",
+        LOGIN_ATTEMPT_WINDOW_SECONDS=LOGIN_ATTEMPT_WINDOW_SECONDS,
+        LOGIN_MAX_FAILURES=LOGIN_MAX_FAILURES,
     )
     if test_config is not None:
         app.config.update(test_config)
+    if app.config["APP_ENV"] not in {"development", "test", "production"}:
+        raise RuntimeError("APP_ENV harus development, test, atau production.")
     if not app.config.get("SECRET_KEY"):
         raise RuntimeError(
             "Variabel lingkungan SECRET_KEY wajib diatur sebelum menjalankan aplikasi."
         )
+    if app.config["APP_ENV"] == "production":
+        if app.config["DEBUG"]:
+            raise RuntimeError("Mode debug tidak boleh aktif pada production.")
+        if not app.config["SESSION_COOKIE_SECURE"]:
+            raise RuntimeError(
+                "SESSION_COOKIE_SECURE wajib aktif pada production."
+            )
     app.config.setdefault(
         "DUMMY_PASSWORD_HASH",
         generate_password_hash(secrets.token_urlsafe(32), method="scrypt"),
@@ -76,10 +104,18 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 not submitted_token
                 or not secrets.compare_digest(submitted_token, csrf_cookie)
             ):
+                app.logger.warning(
+                    "security.csrf_rejected endpoint=%s",
+                    request.endpoint or "unknown",
+                )
                 abort(400)
             try:
                 csrf_serializer.loads(submitted_token, max_age=CSRF_TOKEN_MAX_AGE)
             except BadData:
+                app.logger.warning(
+                    "security.csrf_rejected endpoint=%s",
+                    request.endpoint or "unknown",
+                )
                 abort(400)
 
         pengguna_id = session.get("pengguna_id")
@@ -93,6 +129,12 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.after_request
     def set_csrf_cookie(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault(
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin",
+        )
         csrf_cookie = getattr(g, "csrf_cookie_to_set", None)
         if csrf_cookie is not None:
             response.set_cookie(
@@ -123,6 +165,12 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                         next_url = next_url[:-1]
                     return redirect(url_for("login", next=next_url))
                 if g.pengguna["peran"] not in peran_diizinkan:
+                    app.logger.warning(
+                        "security.access_denied pengguna_id=%s peran=%s endpoint=%s",
+                        g.pengguna["id"],
+                        g.pengguna["peran"],
+                        request.endpoint or "unknown",
+                    )
                     abort(403)
                 return view(*args, **kwargs)
 
@@ -142,9 +190,39 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     def login_submit():
         username = request.form.get("username", "")
         password = request.form.get("password", "")
+        fingerprint = services.login_attempt_fingerprint(
+            request.remote_addr,
+            username,
+        )
+        now = epoch_time()
+        attempt_allowed = models.reserve_login_attempt(
+            fingerprint,
+            now,
+            app.config["LOGIN_ATTEMPT_WINDOW_SECONDS"],
+            app.config["LOGIN_MAX_FAILURES"],
+        )
+        next_url = services.safe_next_url(request.form.get("next"))
+        if not attempt_allowed:
+            app.logger.warning(
+                "auth.login_locked fingerprint=%s",
+                fingerprint,
+            )
+            return (
+                render_template(
+                    "login.html",
+                    username=username,
+                    next_url=next_url,
+                    error="Terlalu banyak percobaan masuk. Coba lagi beberapa menit.",
+                ),
+                429,
+            )
+
         pengguna = services.authenticate_pengguna(username, password)
         if pengguna is None:
-            next_url = services.safe_next_url(request.form.get("next"))
+            app.logger.warning(
+                "auth.login_failed fingerprint=%s",
+                fingerprint,
+            )
             return (
                 render_template(
                     "login.html",
@@ -155,6 +233,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 401,
             )
 
+        models.clear_login_failures(fingerprint)
         session.clear()
         session["pengguna_id"] = pengguna["id"]
         g.csrf_cookie_to_set = csrf_serializer.dumps(secrets.token_urlsafe(32))

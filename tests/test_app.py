@@ -439,7 +439,14 @@ class BahanAppTest(unittest.TestCase):
                 )
             }
         self.assertTrue(
-            {"resep", "bahan", "resep_bahan", "langkah_resep"}.issubset(tables)
+            {
+                "resep",
+                "bahan",
+                "resep_bahan",
+                "langkah_resep",
+                "pengguna",
+                "login_attempts",
+            }.issubset(tables)
         )
 
 

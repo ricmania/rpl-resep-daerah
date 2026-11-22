@@ -33,3 +33,9 @@ CREATE TABLE IF NOT EXISTS pengguna (
     password_hash TEXT NOT NULL,
     peran TEXT NOT NULL CHECK (peran IN ('pengelola', 'pengguna'))
 );
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+    fingerprint TEXT PRIMARY KEY,
+    window_started_at REAL NOT NULL,
+    failures INTEGER NOT NULL CHECK (failures > 0)
+);

@@ -70,6 +70,51 @@ def get_pengguna_by_id(pengguna_id: int) -> sqlite3.Row | None:
     ).fetchone()
 
 
+def reserve_login_attempt(
+    fingerprint: str,
+    now: float,
+    window_seconds: int,
+    max_attempts: int,
+) -> bool:
+    connection = get_db()
+    connection.execute("BEGIN IMMEDIATE")
+    try:
+        connection.execute(
+            "DELETE FROM login_attempts WHERE window_started_at <= ?",
+            (now - window_seconds,),
+        )
+        row = connection.execute(
+            "SELECT failures FROM login_attempts WHERE fingerprint = ?",
+            (fingerprint,),
+        ).fetchone()
+        if row is not None and row["failures"] >= max_attempts:
+            connection.commit()
+            return False
+        connection.execute(
+            """
+            INSERT INTO login_attempts (fingerprint, window_started_at, failures)
+            VALUES (?, ?, 1)
+            ON CONFLICT(fingerprint) DO UPDATE SET
+                failures = login_attempts.failures + 1
+            """,
+            (fingerprint, now),
+        )
+        connection.commit()
+        return True
+    except sqlite3.Error:
+        connection.rollback()
+        raise
+
+
+def clear_login_failures(fingerprint: str) -> None:
+    connection = get_db()
+    with connection:
+        connection.execute(
+            "DELETE FROM login_attempts WHERE fingerprint = ?",
+            (fingerprint,),
+        )
+
+
 def list_bahan() -> list[sqlite3.Row]:
     return get_db().execute(
         "SELECT id, nama FROM bahan ORDER BY nama COLLATE NOCASE, id"

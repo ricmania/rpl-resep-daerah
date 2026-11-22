@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -186,6 +187,67 @@ class UjiCepatResep(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["Location"], "/login")
         self.assertEqual(self.client.get("/bahan").status_code, 302)
+
+    def test_post_without_csrf_is_rejected_and_logged(self) -> None:
+        client = self.app.test_client()
+        client.get("/login")
+        with self.assertLogs(self.app.logger, level="WARNING") as captured:
+            response = client.post(
+                "/login",
+                data={
+                    "username": "pengelola_uji",
+                    "password": "kata-sandi-uji-123",
+                },
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("security.csrf_rejected", "\n".join(captured.output))
+        self.assertNotIn("kata-sandi-uji-123", "\n".join(captured.output))
+
+    def test_login_limit_returns_429_then_expires_after_five_minutes(self) -> None:
+        client = self.app.test_client()
+        client.get("/login")
+        csrf_token = client.get_cookie("csrf_token").value
+        with patch("app.epoch_time", return_value=1000):
+            for _ in range(5):
+                response = client.post(
+                    "/login",
+                    data={
+                        "csrf_token": csrf_token,
+                        "username": "pengelola_uji",
+                        "password": "kata-sandi-salah",
+                    },
+                )
+                self.assertEqual(response.status_code, 401)
+
+            locked_response = client.post(
+                "/login",
+                data={
+                    "csrf_token": csrf_token,
+                    "username": "pengelola_uji",
+                    "password": "kata-sandi-uji-123",
+                },
+            )
+        self.assertEqual(locked_response.status_code, 429)
+
+        with patch("app.epoch_time", return_value=1300):
+            allowed_response = client.post(
+                "/login",
+                data={
+                    "csrf_token": csrf_token,
+                    "username": "pengelola_uji",
+                    "password": "kata-sandi-uji-123",
+                },
+            )
+        self.assertEqual(allowed_response.status_code, 302)
+
+    def test_security_headers_are_present(self) -> None:
+        response = self.client.get("/login")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+        self.assertEqual(
+            response.headers["Referrer-Policy"],
+            "strict-origin-when-cross-origin",
+        )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from werkzeug.security import check_password_hash
@@ -239,11 +240,13 @@ class AutentikasiAppTest(unittest.TestCase):
     def test_post_without_valid_csrf_token_is_rejected(self) -> None:
         client = self.app.test_client()
         self.csrf_token_for(client)
-        missing_token_response = client.post(
-            "/login",
-            data={"username": "nobody", "password": "irrelevant"},
-        )
+        with self.assertLogs(self.app.logger, level="WARNING") as captured:
+            missing_token_response = client.post(
+                "/login",
+                data={"username": "nobody", "password": "irrelevant"},
+            )
         self.assertEqual(missing_token_response.status_code, 400)
+        self.assertIn("security.csrf_rejected", "\n".join(captured.output))
         forged_token_response = client.post(
             "/login",
             data={
@@ -277,21 +280,195 @@ class AutentikasiAppTest(unittest.TestCase):
             "/resep/tambah",
             "/resep-bahan/tambah",
         )
-        for path in forbidden_paths:
-            with self.subTest(path=path):
-                self.assertEqual(client.get(path).status_code, 403)
-                response = client.post(
-                    path,
-                    data={"csrf_token": csrf_token, "nama": "Tidak disimpan"},
-                )
-                self.assertEqual(response.status_code, 403)
-                self.assertIn(b"Akses ditolak", response.data)
+        with self.assertLogs(self.app.logger, level="WARNING") as captured:
+            for path in forbidden_paths:
+                with self.subTest(path=path):
+                    self.assertEqual(client.get(path).status_code, 403)
+                    response = client.post(
+                        path,
+                        data={"csrf_token": csrf_token, "nama": "Tidak disimpan"},
+                    )
+                    self.assertEqual(response.status_code, 403)
+                    self.assertIn(b"Akses ditolak", response.data)
+        self.assertIn(
+            "security.access_denied",
+            "\n".join(captured.output),
+        )
 
         with self.app.app_context():
             self.assertEqual(
                 get_db().execute("SELECT COUNT(*) FROM bahan").fetchone()[0],
                 0,
             )
+
+    def test_sixth_login_attempt_is_limited_and_logs_without_password(self) -> None:
+        self.create_account()
+        client = self.app.test_client()
+        csrf_token = self.csrf_token_for(client)
+        with patch("app.epoch_time", return_value=1000):
+            with self.assertLogs(self.app.logger, level="WARNING") as captured:
+                for _ in range(5):
+                    response = client.post(
+                        "/login",
+                        data={
+                            "csrf_token": csrf_token,
+                            "username": "pengelola_uji",
+                            "password": "sandi-salah-rahasia",
+                        },
+                    )
+                    self.assertEqual(response.status_code, 401)
+
+                locked_response = client.post(
+                    "/login",
+                    data={
+                        "csrf_token": csrf_token,
+                        "username": "pengelola_uji",
+                        "password": "kata-sandi-karangan",
+                    },
+                )
+
+        self.assertEqual(locked_response.status_code, 429)
+        self.assertIn(b"Terlalu banyak percobaan masuk", locked_response.data)
+        joined_logs = "\n".join(captured.output)
+        self.assertIn("auth.login_failed", joined_logs)
+        self.assertIn("auth.login_locked", joined_logs)
+        self.assertNotIn("sandi-salah-rahasia", joined_logs)
+        with client.session_transaction() as browser_session:
+            self.assertEqual(dict(browser_session), {})
+
+    def test_login_limit_expires_after_five_minutes(self) -> None:
+        self.create_account()
+        client = self.app.test_client()
+        csrf_token = self.csrf_token_for(client)
+        with patch("app.epoch_time", return_value=1000):
+            failed_response = client.post(
+                "/login",
+                data={
+                    "csrf_token": csrf_token,
+                    "username": "pengelola_uji",
+                    "password": "kata-sandi-salah",
+                },
+            )
+        self.assertEqual(failed_response.status_code, 401)
+
+        with patch("app.epoch_time", return_value=1300):
+            still_limited = client.post(
+                "/login",
+                data={
+                    "csrf_token": csrf_token,
+                    "username": "pengelola_uji",
+                    "password": "kata-sandi-karangan",
+                },
+            )
+        self.assertEqual(still_limited.status_code, 302)
+
+    def test_successful_login_clears_previous_failures(self) -> None:
+        self.create_account()
+        client = self.app.test_client()
+        csrf_token = self.csrf_token_for(client)
+        failed_response = client.post(
+            "/login",
+            data={
+                "csrf_token": csrf_token,
+                "username": "pengelola_uji",
+                "password": "kata-sandi-salah",
+            },
+        )
+        self.assertEqual(failed_response.status_code, 401)
+        token_after_failure = client.get_cookie("csrf_token").value
+        success_response = client.post(
+            "/login",
+            data={
+                "csrf_token": token_after_failure,
+                "username": "pengelola_uji",
+                "password": "kata-sandi-karangan",
+            },
+        )
+        self.assertEqual(success_response.status_code, 302)
+        with self.app.app_context():
+            fingerprint = services.login_attempt_fingerprint(
+                "127.0.0.1",
+                "pengelola_uji",
+            )
+            remaining = get_db().execute(
+                "SELECT COUNT(*) FROM login_attempts WHERE fingerprint = ?",
+                (fingerprint,),
+            ).fetchone()[0]
+        self.assertEqual(remaining, 0)
+
+    def test_login_limit_fingerprint_is_scoped_to_identity(self) -> None:
+        with self.app.app_context():
+            fingerprint = services.login_attempt_fingerprint(
+                "192.0.2.10",
+                "Pengelola_Uji",
+            )
+            same_identity = services.login_attempt_fingerprint(
+                "192.0.2.10",
+                "pengelola_uji",
+            )
+            different_address = services.login_attempt_fingerprint(
+                "192.0.2.11",
+                "pengelola_uji",
+            )
+            different_username = services.login_attempt_fingerprint(
+                "192.0.2.10",
+                "akun_lain",
+            )
+        self.assertEqual(fingerprint, same_identity)
+        self.assertNotEqual(fingerprint, different_address)
+        self.assertNotEqual(fingerprint, different_username)
+
+    def test_security_headers_are_present(self) -> None:
+        response = self.app.test_client().get("/login")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+        self.assertEqual(
+            response.headers["Referrer-Policy"],
+            "strict-origin-when-cross-origin",
+        )
+
+    def test_production_rejects_missing_secret_insecure_cookie_and_debug(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {"APP_ENV": "production"},
+            clear=True,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "SECRET_KEY"):
+                create_app()
+
+        secure_production_env = {
+            "APP_ENV": "production",
+            "SECRET_KEY": "test-production-secret",
+            "SESSION_COOKIE_SECURE": "false",
+            "APP_DEBUG": "false",
+        }
+        with patch.dict("os.environ", secure_production_env, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "SESSION_COOKIE_SECURE"):
+                create_app()
+
+        debug_production_env = {
+            "APP_ENV": "production",
+            "SECRET_KEY": "test-production-secret",
+            "SESSION_COOKIE_SECURE": "true",
+            "APP_DEBUG": "true",
+        }
+        with patch.dict("os.environ", debug_production_env, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "debug"):
+                create_app()
+
+        valid_production_env = {
+            "APP_ENV": "production",
+            "SECRET_KEY": "test-production-secret",
+            "SESSION_COOKIE_SECURE": "true",
+            "APP_DEBUG": "false",
+            "DATABASE_PATH": str(
+                Path(self.temporary_directory.name) / "production.db"
+            ),
+        }
+        with patch.dict("os.environ", valid_production_env, clear=True):
+            production_app = create_app()
+        self.assertFalse(production_app.config["DEBUG"])
+        self.assertTrue(production_app.config["SESSION_COOKIE_SECURE"])
 
     def test_manager_can_write_and_limited_role_sees_read_only_list(self) -> None:
         manager = self.authenticated_client("pengelola_uji", "pengelola")

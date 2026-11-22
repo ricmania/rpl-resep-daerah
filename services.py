@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 import math
 import re
 from urllib.parse import unquote, urlsplit
@@ -63,6 +65,16 @@ def authenticate_pengguna(username: str, password: str):
     if pengguna is None or not password_valid:
         return None
     return pengguna
+
+
+def login_attempt_fingerprint(remote_addr: str | None, username: str) -> str:
+    address = (remote_addr or "unknown").strip()
+    normalized_username = username.strip().casefold()
+    message = f"{address}\0{normalized_username}".encode("utf-8")
+    secret_key = current_app.secret_key
+    if isinstance(secret_key, str):
+        secret_key = secret_key.encode("utf-8")
+    return hmac.new(secret_key, message, hashlib.sha256).hexdigest()
 
 
 def safe_next_url(candidate: str | None) -> str | None:
