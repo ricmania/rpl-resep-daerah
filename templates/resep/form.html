@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Catat resep — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Catat resep</h1>
+  <p class="muted">Prototipe ini mensyaratkan nama resep, minimal satu bahan, dan minimal satu langkah.</p>
+  {% if error %}
+    <p class="error" role="alert">{{ error }}</p>
+  {% endif %}
+  {% if not bahan %}
+    <p class="messages">Belum ada bahan. Tambahkan bahan terlebih dahulu, lalu kembali ke formulir resep.</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('resep_create') }}">
+    <label for="nama">Nama resep</label>
+    <input id="nama" name="nama" type="text" value="{{ nama }}" required>
+
+    <fieldset>
+      <legend>Bahan — satu baris per bahan</legend>
+      <div id="ingredient-rows">
+        {% for bahan_id in bahan_ids %}
+          <div class="form-row ingredient-row">
+            <label for="bahan_id_{{ loop.index0 }}">Nama bahan</label>
+            <select id="bahan_id_{{ loop.index0 }}" name="bahan_id">
+              <option value="">Pilih bahan</option>
+              {% for item in bahan %}
+                <option value="{{ item['id'] }}"{{ ' selected' if bahan_id|string == item['id']|string else '' }}>{{ item["nama"] }}</option>
+              {% endfor %}
+            </select>
+            <label for="jumlah_{{ loop.index0 }}">Jumlah (&gt; 0 bila diisi)</label>
+            <input id="jumlah_{{ loop.index0 }}" name="jumlah" type="number" step="any" value="{{ jumlahs[loop.index0] }}">
+            <label for="satuan_{{ loop.index0 }}">Satuan (opsional)</label>
+            <input id="satuan_{{ loop.index0 }}" name="satuan" type="text" value="{{ satuans[loop.index0] }}">
+            <button class="button remove-row" type="button">Hapus baris bahan</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button class="button" id="add-ingredient" type="button">Tambah bahan</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>Langkah berurutan</legend>
+      <div id="step-rows">
+        {% for instruksi in instruksi_langkah %}
+          <div class="form-row step-row">
+            <label for="instruksi_{{ loop.index0 }}">Langkah {{ loop.index }}</label>
+            <textarea id="instruksi_{{ loop.index0 }}" name="instruksi" rows="3">{{ instruksi }}</textarea>
+            <button class="button remove-row" type="button">Hapus langkah</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button class="button" id="add-step" type="button">Tambah langkah</button>
+    </fieldset>
+
+    <div class="actions">
+      <button class="button primary" type="submit">Simpan resep</button>
+      <a class="button" href="{{ url_for('resep_list') }}">Batal / kembali</a>
+    </div>
+  </form>
+
+  <template id="ingredient-template">
+    <div class="form-row ingredient-row">
+      <label>Nama bahan
+        <select name="bahan_id">
+          <option value="">Pilih bahan</option>
+          {% for item in bahan %}
+            <option value="{{ item['id'] }}">{{ item["nama"] }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Jumlah (&gt; 0 bila diisi)
+        <input name="jumlah" type="number" step="any" value="">
+      </label>
+      <label>Satuan (opsional)
+        <input name="satuan" type="text" value="">
+      </label>
+      <button class="button remove-row" type="button">Hapus baris bahan</button>
+    </div>
+  </template>
+
+  <template id="step-template">
+    <div class="form-row step-row">
+      <label>Langkah
+        <textarea name="instruksi" rows="3"></textarea>
+      </label>
+      <button class="button remove-row" type="button">Hapus langkah</button>
+    </div>
+  </template>
+
+  <script>
+    const ingredientRows = document.getElementById("ingredient-rows");
+    const stepRows = document.getElementById("step-rows");
+
+    document.getElementById("add-ingredient").addEventListener("click", () => {
+      ingredientRows.append(
+        document.getElementById("ingredient-template").content.cloneNode(true)
+      );
+    });
+    document.getElementById("add-step").addEventListener("click", () => {
+      stepRows.append(
+        document.getElementById("step-template").content.cloneNode(true)
+      );
+    });
+    document.querySelector("form").addEventListener("click", (event) => {
+      if (event.target.matches(".remove-row")) {
+        event.target.closest(".form-row").remove();
+      }
+    });
+  </script>
+{% endblock %}

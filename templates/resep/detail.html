@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ resep["nama"] }} — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Rincian resep</h1>
+  <section class="messages">
+    <h2>{{ resep["nama"] }}</h2>
+    <p>ID resep: {{ resep["id"] }}</p>
+  </section>
+
+  <h2>Bahan</h2>
+  {% if bahan %}
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Nama bahan</th>
+          <th scope="col">Jumlah</th>
+          <th scope="col">Satuan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in bahan %}
+          <tr>
+            <td>{{ item["bahan_nama"] }}</td>
+            <td>{{ item["jumlah"] if item["jumlah"] is not none else "—" }}</td>
+            <td>{{ item["satuan"] if item["satuan"] else "—" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Belum ada bahan pada resep ini.</p>
+  {% endif %}
+
+  <h2>Langkah</h2>
+  {% if langkah %}
+    <ol>
+      {% for item in langkah %}
+        <li>{{ item["instruksi"] }}</li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p class="muted">Belum ada langkah pada resep ini.</p>
+  {% endif %}
+
+  <p><a class="button" href="{{ url_for('resep_list') }}">Kembali ke daftar</a></p>
+{% endblock %}
