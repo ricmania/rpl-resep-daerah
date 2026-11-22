@@ -24,7 +24,7 @@ CREATE TABLE resep_bahan (
 CREATE TABLE langkah_resep (
     id INTEGER PRIMARY KEY,
     resep_id INTEGER NOT NULL REFERENCES resep(id),
-    urutan INTEGER NOT NULL CHECK (urutan > 0),
+    urutan INTEGER NOT NULL CHECK (typeof(urutan) = 'integer' AND urutan > 0),
     instruksi TEXT NOT NULL CHECK (length(trim(instruksi)) > 0),
     UNIQUE (resep_id, urutan)
 );
