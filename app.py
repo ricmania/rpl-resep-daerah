@@ -1,16 +1,32 @@
 from __future__ import annotations
 
 import os
+import secrets
 import sqlite3
+from functools import wraps
 from pathlib import Path
 
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    abort,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from itsdangerous import BadData, URLSafeTimedSerializer
+from werkzeug.security import generate_password_hash
 
 import models
 import services
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+CSRF_COOKIE_NAME = "csrf_token"
+CSRF_TOKEN_MAX_AGE = 86400
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
@@ -22,6 +38,9 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
             str(PROJECT_ROOT / "instance" / "resep.db"),
         ),
         SCHEMA=str(PROJECT_ROOT / "docs" / "desain" / "schema.sql"),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE="Lax",
     )
     if test_config is not None:
         app.config.update(test_config)
@@ -29,24 +48,143 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         raise RuntimeError(
             "Variabel lingkungan SECRET_KEY wajib diatur sebelum menjalankan aplikasi."
         )
+    app.config.setdefault(
+        "DUMMY_PASSWORD_HASH",
+        generate_password_hash(secrets.token_urlsafe(32), method="scrypt"),
+    )
+    csrf_serializer = URLSafeTimedSerializer(app.secret_key, salt="resep-csrf")
 
     app.teardown_appcontext(models.close_db)
     with app.app_context():
         models.init_db()
 
+    @app.before_request
+    def protect_post_requests():
+        csrf_cookie = request.cookies.get(CSRF_COOKIE_NAME)
+        try:
+            if csrf_cookie is None:
+                raise BadData("missing CSRF cookie")
+            csrf_serializer.loads(csrf_cookie, max_age=CSRF_TOKEN_MAX_AGE)
+        except BadData:
+            csrf_cookie = csrf_serializer.dumps(secrets.token_urlsafe(32))
+            g.csrf_cookie_to_set = csrf_cookie
+        g.csrf_token = csrf_cookie
+
+        if request.method == "POST":
+            submitted_token = request.form.get("csrf_token", "")
+            if (
+                not submitted_token
+                or not secrets.compare_digest(submitted_token, csrf_cookie)
+            ):
+                abort(400)
+            try:
+                csrf_serializer.loads(submitted_token, max_age=CSRF_TOKEN_MAX_AGE)
+            except BadData:
+                abort(400)
+
+        pengguna_id = session.get("pengguna_id")
+        g.pengguna = (
+            models.get_pengguna_by_id(pengguna_id)
+            if isinstance(pengguna_id, int) and not isinstance(pengguna_id, bool)
+            else None
+        )
+        if pengguna_id is not None and g.pengguna is None:
+            session.clear()
+
+    @app.after_request
+    def set_csrf_cookie(response):
+        csrf_cookie = getattr(g, "csrf_cookie_to_set", None)
+        if csrf_cookie is not None:
+            response.set_cookie(
+                CSRF_COOKIE_NAME,
+                csrf_cookie,
+                max_age=CSRF_TOKEN_MAX_AGE,
+                httponly=True,
+                secure=app.config["SESSION_COOKIE_SECURE"],
+                samesite="Lax",
+                path="/",
+            )
+        return response
+
+    @app.context_processor
+    def provide_csrf_token():
+        return {
+            "csrf_token": lambda: g.csrf_token,
+            "current_user": lambda: g.get("pengguna"),
+        }
+
+    def peran_diperlukan(*peran_diizinkan: str):
+        def decorate(view):
+            @wraps(view)
+            def wrapped(*args, **kwargs):
+                if g.pengguna is None:
+                    next_url = request.full_path
+                    if next_url.endswith("?"):
+                        next_url = next_url[:-1]
+                    return redirect(url_for("login", next=next_url))
+                if g.pengguna["peran"] not in peran_diizinkan:
+                    abort(403)
+                return view(*args, **kwargs)
+
+            return wrapped
+
+        return decorate
+
+    @app.get("/login")
+    def login():
+        if request.args.get("next"):
+            next_url = services.safe_next_url(request.args["next"])
+        else:
+            next_url = None
+        return render_template("login.html", next_url=next_url)
+
+    @app.post("/login")
+    def login_submit():
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+        pengguna = services.authenticate_pengguna(username, password)
+        if pengguna is None:
+            next_url = services.safe_next_url(request.form.get("next"))
+            return (
+                render_template(
+                    "login.html",
+                    username=username,
+                    next_url=next_url,
+                    error="Nama pengguna atau kata sandi salah.",
+                ),
+                401,
+            )
+
+        session.clear()
+        session["pengguna_id"] = pengguna["id"]
+        g.csrf_cookie_to_set = csrf_serializer.dumps(secrets.token_urlsafe(32))
+        next_url = services.safe_next_url(request.form.get("next"))
+        return redirect(next_url or url_for("home"))
+
+    @app.post("/logout")
+    @peran_diperlukan("pengelola", "pengguna")
+    def logout():
+        session.clear()
+        g.csrf_cookie_to_set = csrf_serializer.dumps(secrets.token_urlsafe(32))
+        return redirect(url_for("login"))
+
     @app.get("/")
+    @peran_diperlukan("pengelola", "pengguna")
     def home():
         return redirect(url_for("bahan_list"))
 
     @app.get("/bahan")
+    @peran_diperlukan("pengelola", "pengguna")
     def bahan_list():
         return render_template("bahan/list.html", bahan=services.list_bahan())
 
     @app.get("/resep")
+    @peran_diperlukan("pengelola", "pengguna")
     def resep_list():
         return render_template("resep/list.html", resep=services.list_resep())
 
     @app.get("/resep/<int:resep_id>")
+    @peran_diperlukan("pengelola", "pengguna")
     def resep_detail(resep_id: int):
         resep_detail_data = services.get_resep_detail(resep_id)
         if resep_detail_data is None:
@@ -94,6 +232,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         )
 
     @app.route("/resep/tambah", methods=["GET", "POST"])
+    @peran_diperlukan("pengelola")
     def resep_create():
         if request.method == "GET":
             return render_resep_form()
@@ -136,6 +275,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         return redirect(url_for("resep_detail", resep_id=resep_id))
 
     @app.get("/resep-bahan")
+    @peran_diperlukan("pengelola", "pengguna")
     def resep_bahan_list():
         return render_template(
             "resep_bahan/list.html",
@@ -166,6 +306,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         )
 
     @app.route("/resep-bahan/tambah", methods=["GET", "POST"])
+    @peran_diperlukan("pengelola")
     def resep_bahan_create():
         if request.method == "GET":
             return render_resep_bahan_form()
@@ -199,6 +340,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         return redirect(url_for("resep_bahan_list"))
 
     @app.route("/bahan/tambah", methods=["GET", "POST"])
+    @peran_diperlukan("pengelola")
     def bahan_create():
         if request.method == "GET":
             return render_template(
@@ -238,6 +380,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         return redirect(url_for("bahan_list"))
 
     @app.route("/bahan/<int:bahan_id>/ubah", methods=["GET", "POST"])
+    @peran_diperlukan("pengelola")
     def bahan_update(bahan_id: int):
         bahan = services.get_bahan(bahan_id)
         if bahan is None:
@@ -281,6 +424,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         return redirect(url_for("bahan_list"))
 
     @app.route("/bahan/<int:bahan_id>/hapus", methods=["GET", "POST"])
+    @peran_diperlukan("pengelola")
     def bahan_delete(bahan_id: int):
         bahan = services.get_bahan(bahan_id)
         if bahan is None:
@@ -304,6 +448,14 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     @app.errorhandler(404)
     def not_found(_error):
         return render_template("404.html"), 404
+
+    @app.errorhandler(400)
+    def bad_request(_error):
+        return render_template("400.html"), 400
+
+    @app.errorhandler(403)
+    def forbidden(_error):
+        return render_template("403.html"), 403
 
     return app
 

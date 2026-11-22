@@ -5,7 +5,9 @@
 {% block content %}
   <h1>Daftar bahan</h1>
   <p>Data bahan yang tersimpan.</p>
-  <p><a class="button primary" href="{{ url_for('bahan_create') }}">Tambah bahan</a></p>
+  {% if current_user["peran"] == "pengelola" %}
+    <p><a class="button primary" href="{{ url_for('bahan_create') }}">Tambah bahan</a></p>
+  {% endif %}
 
   {% if bahan %}
     <table>
@@ -13,7 +15,7 @@
         <tr>
           <th scope="col">ID bahan</th>
           <th scope="col">Nama bahan</th>
-          <th scope="col">Aksi</th>
+          {% if current_user["peran"] == "pengelola" %}<th scope="col">Aksi</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -21,12 +23,14 @@
           <tr>
             <td>{{ item["id"] }}</td>
             <td>{{ item["nama"] }}</td>
-            <td>
-              <div class="actions">
-                <a class="button" href="{{ url_for('bahan_update', bahan_id=item['id']) }}">Ubah</a>
-                <a class="button danger" href="{{ url_for('bahan_delete', bahan_id=item['id']) }}">Hapus…</a>
-              </div>
-            </td>
+            {% if current_user["peran"] == "pengelola" %}
+              <td>
+                <div class="actions">
+                  <a class="button" href="{{ url_for('bahan_update', bahan_id=item['id']) }}">Ubah</a>
+                  <a class="button danger" href="{{ url_for('bahan_delete', bahan_id=item['id']) }}">Hapus…</a>
+                </div>
+              </td>
+            {% endif %}
           </tr>
         {% endfor %}
       </tbody>

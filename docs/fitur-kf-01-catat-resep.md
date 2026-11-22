@@ -20,5 +20,5 @@ Kriteria atribut wajib bisnis pada PRD/SRS belum disepakati kelompok atau klien.
 - Semua SQL tetap berada di `models.py`; resep, rincian bahan, dan langkah disimpan pada satu koneksi dan satu transaksi.
 - Form mengambil bahan yang sudah ada. Jika belum ada, pengguna diarahkan untuk membuat bahan lebih dahulu.
 - `jumlah` dan `satuan` tidak dipaksakan menjadi wajib karena kamus data/skema memperbolehkan NULL.
-- Login, otorisasi peran, pencarian, serta keputusan atribut wajib final belum diimplementasikan.
+- Login dan otorisasi sekarang diterapkan terpisah sebagai prototipe Jobsheet; keduanya belum disetujui klien dan bukan bagian dari KF-01. Pencarian serta keputusan atribut wajib final masih tertunda.
 - Data pengujian berada pada SQLite sementara; tidak memakai basis data aplikasi.

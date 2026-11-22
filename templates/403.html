@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Akses ditolak — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Akses ditolak</h1>
+  <p class="messages error" role="alert">Peran akun Anda tidak diizinkan melakukan tindakan ini.</p>
+  <p><a class="button" href="{{ url_for('home') }}">Kembali ke beranda</a></p>
+{% endblock %}

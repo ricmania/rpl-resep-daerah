@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import math
 import re
-from werkzeug.security import generate_password_hash
+from urllib.parse import unquote, urlsplit
+
+from flask import current_app
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import models
 
@@ -47,6 +50,38 @@ def create_pengguna(username: str, password: str, peran: str) -> int:
 
     password_hash = generate_password_hash(password, method="scrypt")
     return models.create_pengguna(normalized_username, password_hash, peran)
+
+
+def authenticate_pengguna(username: str, password: str):
+    pengguna = models.get_pengguna_by_username(username.strip())
+    password_hash = (
+        pengguna["password_hash"]
+        if pengguna is not None
+        else current_app.config["DUMMY_PASSWORD_HASH"]
+    )
+    password_valid = check_password_hash(password_hash, password)
+    if pengguna is None or not password_valid:
+        return None
+    return pengguna
+
+
+def safe_next_url(candidate: str | None) -> str | None:
+    if not candidate or "\\" in candidate:
+        return None
+    parsed = urlsplit(candidate)
+    path = unquote(parsed.path)
+    if (
+        not candidate.startswith("/")
+        or candidate.startswith("//")
+        or parsed.scheme
+        or parsed.netloc
+        or not path.startswith("/")
+        or path.startswith("//")
+        or "\\" in path
+        or any(ord(character) < 32 for character in candidate)
+    ):
+        return None
+    return candidate
 
 
 def get_bahan(bahan_id: int):

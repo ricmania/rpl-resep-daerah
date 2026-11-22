@@ -5,7 +5,9 @@
 {% block content %}
   <h1>Daftar resep</h1>
   <p>Resep yang tersimpan.</p>
-  <p><a class="button primary" href="{{ url_for('resep_create') }}">Catat resep</a></p>
+  {% if current_user["peran"] == "pengelola" %}
+    <p><a class="button primary" href="{{ url_for('resep_create') }}">Catat resep</a></p>
+  {% endif %}
 
   {% if resep %}
     <table>

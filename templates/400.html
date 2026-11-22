@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Permintaan tidak valid — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Permintaan tidak valid</h1>
+  <p class="messages error" role="alert">Permintaan tidak dapat diproses. Muat ulang halaman, lalu coba kembali.</p>
+  <p><a class="button" href="{{ url_for('home') }}">Kembali</a></p>
+{% endblock %}

@@ -13,6 +13,7 @@
   {% endif %}
 
   <form method="post" action="{{ url_for('resep_create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="nama">Nama resep</label>
     <input id="nama" name="nama" type="text" value="{{ nama }}" required>
 
@@ -29,7 +30,7 @@
               {% endfor %}
             </select>
             <label for="jumlah_{{ loop.index0 }}">Jumlah (&gt; 0 bila diisi)</label>
-            <input id="jumlah_{{ loop.index0 }}" name="jumlah" type="number" step="any" value="{{ jumlahs[loop.index0] }}">
+            <input id="jumlah_{{ loop.index0 }}" name="jumlah" type="number" min="0.0000000000000001" step="any" value="{{ jumlahs[loop.index0] }}">
             <label for="satuan_{{ loop.index0 }}">Satuan (opsional)</label>
             <input id="satuan_{{ loop.index0 }}" name="satuan" type="text" value="{{ satuans[loop.index0] }}">
             <button class="button remove-row" type="button">Hapus baris bahan</button>
@@ -70,7 +71,7 @@
         </select>
       </label>
       <label>Jumlah (&gt; 0 bila diisi)
-        <input name="jumlah" type="number" step="any" value="">
+        <input name="jumlah" type="number" min="0.0000000000000001" step="any" value="">
       </label>
       <label>Satuan (opsional)
         <input name="satuan" type="text" value="">

@@ -12,8 +12,8 @@
 | 6 | [Daftar bahan](./wf-06-daftar-bahan.png) | Bagian dari alur pencatatan/pembacaan UC-01 dan UC-05 / KF-01, KF-02; halaman entitas `bahan` | Pengelola resep, Pengguna resep | `bahan.id`, `bahan.nama`; pada konteks resep, `resep_bahan.jumlah` dan `resep_bahan.satuan` |
 | 7 | [Keadaan validasi dan tanpa hasil](./wf-07-keadaan.png) | Pengecualian UC-02, UC-04 / KF-01, KF-02; keadaan pada formulir dan pencarian, bukan fitur mandiri | Pengelola resep, Pengguna resep | Nama atribut wajib yang belum lengkap; atau kata kunci pencarian dan pesan tanpa hasil |
 
-Semua entitas kamus data terwakili: `resep` pada daftar/rincian/formulir, `bahan` pada daftar bahan, `resep_bahan` pada formulir/rincian, dan `langkah_resep` pada formulir/rincian. Tidak ada use case untuk masuk/login dalam SRS. Halaman login hanya placeholder latihan sesuai lembar kerja; kebutuhan, aktor, hak akses, dan alur autentikasinya harus dikonfirmasi sebelum menjadi fitur.
+Semua entitas kamus data terwakili: `resep` pada daftar/rincian/formulir, `bahan` pada daftar bahan, `resep_bahan` pada formulir/rincian, dan `langkah_resep` pada formulir/rincian. Tidak ada use case untuk masuk/login dalam SRS. Login sekarang dibuat sebagai prototipe Jobsheet, tetapi kebutuhan, aktor, hak akses, dan alur autentikasinya tetap harus dikonfirmasi sebelum menjadi fitur produk.
 
 ## Hak akses yang dirancang
 
-UC-01 dilakukan oleh Pengelola resep; UC-03–UC-05 oleh Pengguna resep. SRS belum menetapkan apakah Pengelola juga boleh menjadi Pengguna, maupun mekanisme pembatasan akses. Karena itu, label peran pada halaman menunjukkan aktor skenario, bukan kontrol akses yang sudah disepakati atau diimplementasikan.
+UC-01 dilakukan oleh Pengelola resep; UC-03–UC-05 oleh Pengguna resep. SRS belum menetapkan apakah Pengelola juga boleh menjadi Pengguna. Implementasi prototipe pada [fitur autentikasi](../../fitur-autentikasi.md) menerapkan matriks latihan, bukan kontrol akses yang telah disetujui klien.

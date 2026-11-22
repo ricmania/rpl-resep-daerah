@@ -7,6 +7,7 @@ from pathlib import Path
 
 from app import create_app
 from models import create_resep, get_db
+import services
 
 
 class BahanAppTest(unittest.TestCase):
@@ -18,15 +19,38 @@ class BahanAppTest(unittest.TestCase):
                 "TESTING": True,
                 "SECRET_KEY": "test-only-secret",
                 "DATABASE": str(database_path),
+                "SESSION_COOKIE_SECURE": False,
             }
         )
+        with self.app.app_context():
+            services.create_pengguna(
+                "pengelola_uji",
+                "kata-sandi-uji-123",
+                "pengelola",
+            )
         self.client = self.app.test_client()
+        self.client.get("/login")
+        csrf_token = self.client.get_cookie("csrf_token").value
+        self.client.post(
+            "/login",
+            data={
+                "csrf_token": csrf_token,
+                "username": "pengelola_uji",
+                "password": "kata-sandi-uji-123",
+            },
+        )
+        self.csrf_token = self.client.get_cookie("csrf_token").value
 
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
 
+    def post_form(self, path: str, data: dict | None = None, **kwargs):
+        form_data = dict(data or {})
+        form_data.setdefault("csrf_token", self.csrf_token)
+        return self.client.post(path, data=form_data, **kwargs)
+
     def create_bahan(self, nama: str) -> int:
-        response = self.client.post(
+        response = self.post_form(
             "/bahan/tambah",
             data={"nama": nama},
             follow_redirects=True,
@@ -55,7 +79,7 @@ class BahanAppTest(unittest.TestCase):
         self.assertIn(b"Belum ada data bahan.", response.data)
 
     def test_create_trims_name_and_uses_post_redirect_get(self) -> None:
-        response = self.client.post("/bahan/tambah", data={"nama": "  Bayam  "})
+        response = self.post_form("/bahan/tambah", data={"nama": "  Bayam  "})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["Location"], "/bahan")
         listed = self.client.get(response.headers["Location"])
@@ -63,7 +87,7 @@ class BahanAppTest(unittest.TestCase):
         self.assertIn(b"Bahan berhasil ditambahkan.", listed.data)
 
     def test_blank_name_is_rejected_and_value_is_preserved(self) -> None:
-        response = self.client.post(
+        response = self.post_form(
             "/bahan/tambah",
             data={"nama": "   "},
         )
@@ -75,12 +99,12 @@ class BahanAppTest(unittest.TestCase):
         self.assertEqual(count, 0)
 
     def test_duplicate_names_are_allowed_by_the_data_dictionary(self) -> None:
-        first = self.client.post(
+        first = self.post_form(
             "/bahan/tambah",
             data={"nama": "Santan"},
             follow_redirects=True,
         )
-        second = self.client.post(
+        second = self.post_form(
             "/bahan/tambah",
             data={"nama": "Santan"},
             follow_redirects=True,
@@ -94,7 +118,7 @@ class BahanAppTest(unittest.TestCase):
         edit_page = self.client.get(f"/bahan/{bahan_id}/ubah")
         self.assertIn(b'value="Jahe"', edit_page.data)
 
-        updated = self.client.post(
+        updated = self.post_form(
             f"/bahan/{bahan_id}/ubah",
             data={"nama": "  Jahe merah  "},
             follow_redirects=True,
@@ -110,7 +134,7 @@ class BahanAppTest(unittest.TestCase):
 
     def test_missing_and_invalid_ids_return_404(self) -> None:
         self.assertEqual(self.client.get("/bahan/999/ubah").status_code, 404)
-        self.assertEqual(self.client.post("/bahan/999/ubah").status_code, 404)
+        self.assertEqual(self.post_form("/bahan/999/ubah").status_code, 404)
         self.assertEqual(self.client.get("/bahan/-1/ubah").status_code, 404)
         self.assertEqual(self.client.get("/bahan/abc/ubah").status_code, 404)
 
@@ -123,7 +147,7 @@ class BahanAppTest(unittest.TestCase):
                 "SELECT id FROM bahan WHERE id = ?", (bahan_id,)
             ).fetchone())
 
-        deleted = self.client.post(
+        deleted = self.post_form(
             f"/bahan/{bahan_id}/hapus",
             follow_redirects=True,
         )
@@ -145,7 +169,7 @@ class BahanAppTest(unittest.TestCase):
             )
             database.commit()
 
-        response = self.client.post(
+        response = self.post_form(
             f"/bahan/{bahan_id}/hapus",
             follow_redirects=True,
         )
@@ -179,7 +203,7 @@ class BahanAppTest(unittest.TestCase):
         first_bahan_id = self.create_bahan("Beras")
         second_bahan_id = self.create_bahan("Santan")
 
-        response = self.client.post(
+        response = self.post_form(
             "/resep/tambah",
             data={
                 "nama": "  Nasi Gurih  ",
@@ -259,7 +283,7 @@ class BahanAppTest(unittest.TestCase):
         ]
         for data, expected_message in test_cases:
             with self.subTest(data=data):
-                response = self.client.post("/resep/tambah", data=data)
+                response = self.post_form("/resep/tambah", data=data)
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(expected_message, response.data)
                 with self.app.app_context():
@@ -308,7 +332,7 @@ class BahanAppTest(unittest.TestCase):
         resep_id = self.create_resep("Rendang")
         bahan_id = self.create_bahan("Cabai")
 
-        response = self.client.post(
+        response = self.post_form(
             "/resep-bahan/tambah",
             data={
                 "resep_id": str(resep_id),
@@ -344,7 +368,7 @@ class BahanAppTest(unittest.TestCase):
         ]
         for data, expected_message in test_cases:
             with self.subTest(data=data):
-                response = self.client.post(
+                response = self.post_form(
                     "/resep-bahan/tambah",
                     data=data,
                 )
@@ -361,7 +385,7 @@ class BahanAppTest(unittest.TestCase):
         bahan_id = self.create_bahan("Kluwek")
         for jumlah in ("0", "-3", "abc", "inf", "nan"):
             with self.subTest(jumlah=jumlah):
-                response = self.client.post(
+                response = self.post_form(
                     "/resep-bahan/tambah",
                     data={
                         "resep_id": str(resep_id),
@@ -381,7 +405,7 @@ class BahanAppTest(unittest.TestCase):
 
     def test_sql_injection_text_is_stored_as_data(self) -> None:
         payload = "Robert'); DROP TABLE bahan;--"
-        response = self.client.post(
+        response = self.post_form(
             "/bahan/tambah",
             data={"nama": payload},
             follow_redirects=True,
@@ -401,7 +425,7 @@ class BahanAppTest(unittest.TestCase):
         self.assertIsNotNone(table)
 
     def test_user_html_is_escaped_in_list(self) -> None:
-        self.client.post("/bahan/tambah", data={"nama": "<b>tes</b>"})
+        self.post_form("/bahan/tambah", data={"nama": "<b>tes</b>"})
         response = self.client.get("/bahan")
         self.assertIn(b"&lt;b&gt;tes&lt;/b&gt;", response.data)
         self.assertNotIn(b"<b>tes</b>", response.data)
