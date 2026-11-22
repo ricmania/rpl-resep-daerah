@@ -25,22 +25,49 @@ def close_db(_error: BaseException | None = None) -> None:
 
 
 def init_db() -> None:
-    database_path = Path(current_app.config["DATABASE"])
     schema_path = Path(current_app.config["SCHEMA"])
-    database_path.parent.mkdir(parents=True, exist_ok=True)
-    initialize = not database_path.exists() or database_path.stat().st_size == 0
 
     if not schema_path.is_file():
         raise FileNotFoundError(f"Skema SQLite tidak ditemukan: {schema_path}")
 
     connection = get_db()
-    if initialize:
-        schema = schema_path.read_text(encoding="utf-8")
-        try:
-            connection.executescript(f"BEGIN;\n{schema}\nCOMMIT;")
-        except sqlite3.Error:
-            connection.rollback()
-            raise
+    schema = schema_path.read_text(encoding="utf-8")
+    try:
+        connection.executescript(f"BEGIN;\n{schema}\nCOMMIT;")
+    except sqlite3.Error:
+        connection.rollback()
+        raise
+
+
+def create_pengguna(username: str, password_hash: str, peran: str) -> int:
+    connection = get_db()
+    with connection:
+        cursor = connection.execute(
+            """
+            INSERT INTO pengguna (username, password_hash, peran)
+            VALUES (?, ?, ?)
+            """,
+            (username, password_hash, peran),
+        )
+    return cursor.lastrowid
+
+
+def get_pengguna_by_username(username: str) -> sqlite3.Row | None:
+    return get_db().execute(
+        """
+        SELECT id, username, password_hash, peran
+        FROM pengguna
+        WHERE username = ?
+        """,
+        (username,),
+    ).fetchone()
+
+
+def get_pengguna_by_id(pengguna_id: int) -> sqlite3.Row | None:
+    return get_db().execute(
+        "SELECT id, username, peran FROM pengguna WHERE id = ?",
+        (pengguna_id,),
+    ).fetchone()
 
 
 def list_bahan() -> list[sqlite3.Row]:

@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import math
+import re
+from werkzeug.security import generate_password_hash
 
 import models
 
 
 class ValidationError(ValueError):
-    """Raised when a bahan form value violates an application rule."""
+    """Raised when a form value violates an application rule."""
+
+
+PERAN_VALID = {"pengelola", "pengguna"}
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._-]{3,32}$")
+PASSWORD_MIN_LENGTH = 12
+PASSWORD_MAX_LENGTH = 128
 
 
 def validate_bahan_name(nama: str) -> str:
@@ -22,6 +30,23 @@ def validate_bahan_name(nama: str) -> str:
 
 def list_bahan():
     return models.list_bahan()
+
+
+def create_pengguna(username: str, password: str, peran: str) -> int:
+    normalized_username = username.strip()
+    if not USERNAME_PATTERN.fullmatch(normalized_username):
+        raise ValidationError(
+            "Nama pengguna harus 3–32 karakter: huruf, angka, titik, garis bawah, atau tanda hubung."
+        )
+    if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
+        raise ValidationError(
+            f"Kata sandi harus {PASSWORD_MIN_LENGTH}–{PASSWORD_MAX_LENGTH} karakter."
+        )
+    if peran not in PERAN_VALID:
+        raise ValidationError("Peran pengguna tidak valid.")
+
+    password_hash = generate_password_hash(password, method="scrypt")
+    return models.create_pengguna(normalized_username, password_hash, peran)
 
 
 def get_bahan(bahan_id: int):
