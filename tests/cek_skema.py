@@ -12,18 +12,22 @@ def main() -> None:
     try:
         connection.execute("PRAGMA foreign_keys = ON")
         connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
-        connection.execute("INSERT INTO resep (id, nama) VALUES (1, 'Contoh resep')")
-        connection.execute("INSERT INTO bahan (id, nama) VALUES (1, 'Contoh bahan')")
+        connection.execute("INSERT INTO resep (id, nama) VALUES (1, 'Sayur bening')")
+        connection.execute("INSERT INTO bahan (id, nama) VALUES (1, 'Bayam')")
         connection.execute(
             "INSERT INTO resep_bahan (resep_id, bahan_id, jumlah, satuan) "
-            "VALUES (1, 1, 1, 'buah')"
+            "VALUES (1, 1, 1, 'ikat')"
         )
         connection.execute(
             "INSERT INTO langkah_resep (resep_id, urutan, instruksi) "
-            "VALUES (1, 1, 'Langkah contoh')"
+            "VALUES (1, 1, 'Cuci bahan')"
         )
 
         violations = [
+            (
+                "nama resep kosong",
+                "INSERT INTO resep (nama) VALUES ('   ')",
+            ),
             ("nama bahan kosong", "INSERT INTO bahan (nama) VALUES ('   ')"),
             (
                 "jumlah bahan negatif",
@@ -37,7 +41,7 @@ def main() -> None:
             (
                 "urutan langkah duplikat",
                 "INSERT INTO langkah_resep (resep_id, urutan, instruksi) "
-                "VALUES (1, 1, 'Langkah lain')",
+                "VALUES (1, 1, 'Masak')",
             ),
         ]
 

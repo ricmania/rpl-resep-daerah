@@ -30,3 +30,5 @@
 - Rekap 17 entri: **Terima 10/17 (58,8%)**, **Ubah 7/17 (41,2%)**, **Tolak 0/17 (0%)**.
 - Galat yang ditemui: dua ketidakcocokan ekspektasi tes dengan representasi HTML (escaping apostrof dan spasi markup). Keduanya tidak menunjukkan kesalahan query/aturan bisnis pada fitur resep. Sebelumnya juga ditemukan environment `.venv` belum memasang Flask; itu masalah setup, bukan cacat logika aplikasi.
 - Semua entri mencatat keputusan dan alasan. Tiga entri bertanda `[Debug]` (7, 15, 16); catatan ini masih draf gabungan dan perlu dilengkapi refleksi setiap anggota.
+
+Catatan review rancangan sebelumnya tetap berlaku: gunakan domain resep, bukan contoh toko. Login dan aturan jumlah bukan keputusan klien sampai dikonfirmasi; hasil tinjauan sejawat juga belum tersedia.

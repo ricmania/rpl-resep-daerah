@@ -1,0 +1,26 @@
+flowchart LR
+    Login["Login<br/>(placeholder; belum ditentukan)"]
+    Beranda["Beranda"]
+    Daftar["Daftar dan pencarian resep"]
+    Form["Catat resep<br/>(Pengelola resep)"]
+    Detail["Rincian resep"]
+    Bahan["Daftar bahan"]
+    Keadaan["Validasi / tanpa hasil<br/>(keadaan, bukan fitur baru)"]
+
+    Login -->|"lanjut; alur sementara"| Beranda
+    Beranda -->|"menu pencarian"| Daftar
+    Beranda -->|"menu catat"| Form
+    Beranda -->|"menu bahan"| Bahan
+    Beranda -->|"menu akun (placeholder)"| Login
+    Daftar -->|"pilih resep"| Detail
+    Daftar -->|"pencarian tanpa hasil"| Keadaan
+    Detail -->|"kembali ke hasil"| Daftar
+    Bahan -->|"pilih bahan / kembali"| Form
+    Form -->|"simpan berhasil"| Daftar
+    Form -->|"atribut wajib belum lengkap"| Keadaan
+    Keadaan -->|"perbaiki isian"| Form
+    Keadaan -->|"ubah kata kunci"| Daftar
+    Detail -->|"beranda"| Beranda
+    Daftar -->|"beranda"| Beranda
+    Form -->|"beranda"| Beranda
+    Bahan -->|"beranda"| Beranda
