@@ -4,11 +4,19 @@
 
 | ID | Langkah reproduksi | Aktual | Diharapkan | Keparahan | Prioritas | Status |
 |---|---|---|---|---|---|---|
-| D-01 | Buat skema; buat resep dan bahan; masukkan `jumlah='abc'` ke `resep_bahan`. | SQLite menerima nilai teks `abc` pada kolom `REAL` karena perbandingan CHECK dinamis tidak menolaknya. | Jumlah hanya NULL atau angka positif. | Sedang | P1 | Diperbaiki: CHECK mewajibkan kelas tipe numerik. |
-| D-02 | Buat resep; masukkan langkah dengan `urutan=1.5` atau `urutan='abc'`. | SQLite menerima nilai pecahan dan teks pada kolom berafinitas `INTEGER`. | Urutan harus bilangan bulat positif. | Sedang | P1 | Diperbaiki: CHECK mewajibkan kelas tipe integer. |
-| D-03 | Masukkan `sqlite3.Binary(b'Nama')` pada `resep.nama` (juga dapat dicoba pada kolom teks lain). | BLOB diterima pada kolom berafinitas `TEXT`; pemeriksaan tidak mengunci kelas tipe. | Kolom teks hanya menerima nilai TEXT nonkosong. | Sedang | P1 | Diperbaiki: CHECK mengunci tipe TEXT pada semua kolom teks. |
+| D-01 | Buat skema; buat resep dan bahan; masukkan `jumlah='abc'` ke `resep_bahan`. | SQLite menerima nilai teks `abc` pada kolom `REAL` karena perbandingan CHECK dinamis tidak menolaknya. | Jumlah hanya NULL atau angka positif. | Sedang | P1 | Diperbaiki pada `cb4c41e`; 5 uji jumlah lulus. |
+| D-02 | Buat resep; masukkan langkah dengan `urutan=1.5` atau `urutan='abc'`. | SQLite menerima nilai pecahan dan teks pada kolom berafinitas `INTEGER`. | Urutan harus bilangan bulat positif. | Sedang | P1 | Diperbaiki pada `0161824`; 6 uji urutan lulus. |
+| D-03 | Masukkan `sqlite3.Binary(b'Nama')` pada `resep.nama` (juga dapat dicoba pada kolom teks lain). | BLOB diterima pada kolom berafinitas `TEXT`; pemeriksaan tidak mengunci kelas tipe. | Kolom teks hanya menerima nilai TEXT nonkosong. | Sedang | P1 | Diperbaiki pada `bd2a535`; 19 uji teks lulus. |
 
-Ketiga temuan menunjukkan keterbatasan yang sama pada penggunaan afinitas tipe SQLite, tetapi masing-masing mempunyai masukan reproduksi dan uji regresi terpisah. Hasil awal direproduksi di database `:memory:` dan akan dicatat kembali melalui pytest sebelum/sesudah perbaikan. Temuan baru berstatus diperbaiki setelah test regresi lulus dan commit tercatat.
+Ketiga temuan menunjukkan keterbatasan yang sama pada penggunaan afinitas tipe SQLite, tetapi masing-masing mempunyai masukan reproduksi dan uji regresi terpisah. Hasil awal direproduksi di database `:memory:`; sebelum perbaikan tujuh kasus tipe gagal dari 32 kasus parametrik/validasi. Setelah perbaikan, 33 kasus pytest lulus dan empat pemeriksaan `cek_skema.py` tetap menolak pelanggaran.
+
+## Bukti mutasi
+
+| Mutasi sementara | Hasil yang membuktikan uji sensitif | Pemulihan |
+|---|---|---|
+| Hapus pemeriksaan kelas numerik `jumlah`. | `pytest -k jumlah`: 1 gagal (teks `abc` diterima), 4 lulus. | CHECK dipulihkan sebelum mutasi berikutnya. |
+| Hapus pemeriksaan kelas integer `urutan`. | `pytest -k urutan`: 2 gagal (1.5 dan `abc` diterima), 4 lulus. | CHECK dipulihkan sebelum mutasi berikutnya. |
+| Hapus pemeriksaan kelas TEXT pada `resep.nama`. | `pytest -k nama_resep`: 1 gagal (BLOB diterima), 5 lulus. | CHECK dipulihkan; diff skema bersih setelahnya. |
 
 ## Permintaan perubahan
 
@@ -17,4 +25,5 @@ Ketiga temuan menunjukkan keterbatasan yang sama pada penggunaan afinitas tipe S
 ## Batas pemeriksaan
 
 - Tidak ada tiga cacat aplikasi/UI yang diklaim; `main` tidak memiliki `app.py`, `services.py`, atau client HTTP.
+- `python tests/uji_cepat.py` tidak dapat dijalankan karena berkas tersebut tidak ada pada `main`.
 - Perubahan skema perlu diuji terhadap basis data baru. Migrasi data persisten dan kompatibilitas data lama belum termasuk.

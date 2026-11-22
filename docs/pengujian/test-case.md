@@ -25,33 +25,33 @@ Kolom aktual/status diisi hanya setelah perintah uji dijalankan. `Otomatis` bera
 
 | ID | KF | Teknik / partisi | Data / langkah ringkas | Hasil yang diharapkan | Hasil aktual | Status |
 |---|---|---|---|---|---|---|
-| TC-01 | KF-01 | Normal | Simpan resep dengan nama `Sayur contoh`. | Baris tersimpan dan nilainya sama. | Belum dijalankan | Otomatis |
-| TC-02 | KF-01 | Pelanggaran | Simpan nama resep `""`. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-03 | KF-01 | Pelanggaran | Simpan nama resep berisi spasi saja. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-04 | KF-01 | Pelanggaran | Simpan nama resep NULL. | Ditolak oleh `NOT NULL`. | Belum dijalankan | Otomatis |
-| TC-05 | KF-01 | Normal | Simpan bahan dengan nama nonkosong. | Baris bahan tersimpan. | Belum dijalankan | Otomatis |
-| TC-06 | KF-01 | Pelanggaran | Simpan nama bahan kosong. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-07 | KF-01 | Pelanggaran | Simpan nama bahan berisi spasi saja. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-08 | KF-01 | Pelanggaran | Simpan nama bahan NULL. | Ditolak oleh `NOT NULL`. | Belum dijalankan | Otomatis |
-| TC-09 | KF-01 | Batas bawah | Simpan jumlah bahan `-0.01`. | Ditolak karena jumlah harus positif. | Belum dijalankan | Otomatis |
-| TC-10 | KF-01 | Batas | Simpan jumlah bahan `0`. | Ditolak karena batasnya `> 0`. | Belum dijalankan | Otomatis |
-| TC-11 | KF-01 | Batas atas partisi invalid | Simpan jumlah bahan `0.01`. | Diterima dan tersimpan sebagai nilai numerik positif. | Belum dijalankan | Otomatis |
-| TC-12 | KF-01 | Partisi opsional | Simpan jumlah NULL. | Diterima karena kolom opsional. | Belum dijalankan | Otomatis |
-| TC-13 | KF-01 | Pelanggaran tipe | Simpan jumlah `abc`. | Ditolak; jumlah bukan angka. | Belum dijalankan | Otomatis |
-| TC-14 | KF-01 | Pelanggaran | Simpan satuan kosong. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-15 | KF-01 | Pelanggaran | Simpan satuan berisi spasi saja. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-16 | KF-01 | Pelanggaran tipe | Simpan BLOB sebagai satuan. | Ditolak; kolom teks hanya menerima teks. | Belum dijalankan | Otomatis |
-| TC-17 | KF-01 | Batas bawah | Simpan urutan langkah `-1`. | Ditolak karena urutan harus positif. | Belum dijalankan | Otomatis |
-| TC-18 | KF-01 | Batas | Simpan urutan langkah `0`. | Ditolak; nilai minimum valid adalah 1. | Belum dijalankan | Otomatis |
-| TC-19 | KF-01 | Batas tipe | Simpan urutan langkah `1.5`. | Ditolak; urutan harus bilangan bulat. | Belum dijalankan | Otomatis |
-| TC-20 | KF-01 | Pelanggaran tipe | Simpan urutan langkah `abc`. | Ditolak; urutan harus bilangan bulat. | Belum dijalankan | Otomatis |
-| TC-21 | KF-01 | Pelanggaran | Simpan instruksi langkah kosong/spasi saja. | Ditolak oleh batasan skema. | Belum dijalankan | Otomatis |
-| TC-22 | KF-01 | Pelanggaran tipe | Simpan BLOB sebagai instruksi. | Ditolak; instruksi harus teks. | Belum dijalankan | Otomatis |
+| TC-01 | KF-01 | Normal | Simpan resep dengan nama `Sayur contoh`. | Baris tersimpan dan nilainya sama. | Tersimpan; database berada di `tmp_path`. | Lulus |
+| TC-02 | KF-01 | Pelanggaran | Simpan nama resep `""`. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-03 | KF-01 | Pelanggaran | Simpan nama resep berisi spasi saja. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-04 | KF-01 | Pelanggaran | Simpan nama resep NULL. | Ditolak oleh `NOT NULL`. | Ditolak `IntegrityError`. | Lulus |
+| TC-05 | KF-01 | Normal | Simpan bahan dengan nama nonkosong. | Baris bahan tersimpan. | Bahan `Bayam` tersimpan. | Lulus |
+| TC-06 | KF-01 | Pelanggaran | Simpan nama bahan kosong. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-07 | KF-01 | Pelanggaran | Simpan nama bahan berisi spasi saja. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-08 | KF-01 | Pelanggaran | Simpan nama bahan NULL. | Ditolak oleh `NOT NULL`. | Ditolak `IntegrityError`. | Lulus |
+| TC-09 | KF-01 | Batas bawah | Simpan jumlah bahan `-0.01`. | Ditolak karena jumlah harus positif. | Ditolak `IntegrityError`. | Lulus |
+| TC-10 | KF-01 | Batas | Simpan jumlah bahan `0`. | Ditolak karena batasnya `> 0`. | Ditolak `IntegrityError`. | Lulus |
+| TC-11 | KF-01 | Batas atas partisi invalid | Simpan jumlah bahan `0.01`. | Diterima dan tersimpan sebagai nilai numerik positif. | Diterima sebagai nilai numerik. | Lulus |
+| TC-12 | KF-01 | Partisi opsional | Simpan jumlah NULL. | Diterima karena kolom opsional. | Diterima sebagai NULL. | Lulus |
+| TC-13 | KF-01 | Pelanggaran tipe | Simpan jumlah `abc`. | Ditolak; jumlah bukan angka. | Ditolak setelah perbaikan D-01 (`cb4c41e`). | Lulus |
+| TC-14 | KF-01 | Pelanggaran | Simpan satuan kosong. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-15 | KF-01 | Pelanggaran | Simpan satuan berisi spasi saja. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-16 | KF-01 | Pelanggaran tipe | Simpan BLOB sebagai satuan. | Ditolak; kolom teks hanya menerima teks. | Ditolak setelah perbaikan D-03 (`bd2a535`). | Lulus |
+| TC-17 | KF-01 | Batas bawah | Simpan urutan langkah `-1`. | Ditolak karena urutan harus positif. | Ditolak `IntegrityError`. | Lulus |
+| TC-18 | KF-01 | Batas | Simpan urutan langkah `0`. | Ditolak; nilai minimum valid adalah 1. | Ditolak `IntegrityError`. | Lulus |
+| TC-19 | KF-01 | Batas tipe | Simpan urutan langkah `1.5`. | Ditolak; urutan harus bilangan bulat. | Ditolak setelah perbaikan D-02 (`0161824`). | Lulus |
+| TC-20 | KF-01 | Pelanggaran tipe | Simpan urutan langkah `abc`. | Ditolak; urutan harus bilangan bulat. | Ditolak setelah perbaikan D-02 (`0161824`). | Lulus |
+| TC-21 | KF-01 | Pelanggaran | Simpan instruksi langkah kosong/spasi saja. | Ditolak oleh batasan skema. | Ditolak `IntegrityError`. | Lulus |
+| TC-22 | KF-01 | Pelanggaran tipe | Simpan BLOB sebagai instruksi. | Ditolak; instruksi harus teks. | Ditolak setelah perbaikan D-03 (`bd2a535`). | Lulus |
 | TC-23 | KF-02 | Jalur normal | Cari resep cocok melalui formulir aplikasi. | Daftar menampilkan hasil yang cocok menurut aturan final. | — | Tertunda: aplikasi/aturan pencarian tidak tersedia |
 | TC-24 | KF-02 | Jalur tanpa hasil | Cari kata kunci yang tidak cocok. | Aplikasi menampilkan keadaan tanpa hasil. | — | Tertunda: aplikasi/aturan pencarian tidak tersedia |
 | TC-25 | KF-02 | Jalur normal | Buka resep dengan beberapa bahan/langkah. | Rincian menampilkan resep terpilih dan langkah berurutan. | — | Tertunda: aplikasi tidak tersedia |
 
-Komposisi rancangan: **25 test case**; sedikitnya 6 pemeriksaan batas, 6 pelanggaran, dan 3 jalur normal. 22 pemeriksaan skema otomatis; 3 alur KF-02 tertunda. Semua case mengacu ke KF yang ada. Hasil aktual belum diisi sampai eksekusi.
+Komposisi: **25 test case**; sedikitnya 6 pemeriksaan batas, 6 pelanggaran, dan 3 jalur normal. 22 pemeriksaan skema otomatis; 3 alur KF-02 tertunda. Eksekusi terakhir `pytest -q tests`: **33 kasus lulus, 0 gagal**, tersebar pada 12 fungsi uji (parametrisasi dihitung sebagai kasus). Semua case mengacu ke KF yang ada.
 
 ## 4. Catatan draf dan pemeriksaan
 
@@ -59,3 +59,5 @@ Komposisi rancangan: **25 test case**; sedikitnya 6 pemeriksaan batas, 6 pelangg
 - SQLite memakai tipe dinamis; deklarasi `REAL`, `INTEGER`, dan `TEXT` saja belum membuktikan semua nilai tersimpan memiliki kelas tipe yang tepat. TC-13, TC-16, TC-19, TC-20, dan TC-22 secara khusus memeriksa batasan tersebut.
 - Fixture pytest membuat database di `tmp_path`, bukan di file database aplikasi.
 - Fixture akun dan client/CSRF tidak dibuat karena branch `main` tidak berisi aplikasi atau rute HTTP.
+- Mutasi manual pada skema membuktikan regresi tertangkap: menghapus pemeriksaan tipe jumlah membuat 1 uji gagal; menghapus pemeriksaan tipe urutan membuat 2 uji gagal; menghapus pemeriksaan tipe nama membuat 1 uji gagal. Setiap mutasi dikembalikan sebelum validasi akhir.
+- `tests/uji_cepat.py` tidak tersedia pada `main`; perintah yang diminta gagal saat mencari file. `tests/cek_skema.py` tersedia dan keempat pelanggaran yang diperiksanya ditolak.

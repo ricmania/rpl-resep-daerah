@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 import sqlite3
 from pathlib import Path
 
@@ -9,12 +10,12 @@ SCHEMA_PATH = ROOT / "docs" / "desain" / "schema.sql"
 
 
 @pytest.fixture
-def db(tmp_path: Path) -> sqlite3.Connection:
+def db(tmp_path: Path) -> Iterator[sqlite3.Connection]:
     db_path = tmp_path / "resep-test.db"
     connection = sqlite3.connect(db_path)
-    connection.execute("PRAGMA foreign_keys = ON")
-    connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
     try:
+        connection.execute("PRAGMA foreign_keys = ON")
+        connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         yield connection
     finally:
         connection.close()
