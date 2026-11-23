@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Pengelolaan Resep{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header>
+      <a href="{{ url_for('home') }}"><strong>Resep Daerah</strong></a>
+    </header>
+    <nav aria-label="Navigasi utama">
+      {% if current_user %}
+        <a href="{{ url_for('home') }}">Beranda</a>
+        <a href="{{ url_for('bahan_list') }}">Daftar bahan</a>
+        <a href="{{ url_for('resep_list') }}">Daftar resep</a>
+        <a href="{{ url_for('resep_bahan_list') }}">Bahan pada resep</a>
+        {% if current_user["peran"] == "pengelola" %}
+          <a href="{{ url_for('bahan_create') }}">Tambah bahan</a>
+          <a href="{{ url_for('resep_create') }}">Catat resep</a>
+          <a href="{{ url_for('resep_bahan_create') }}">Tambah bahan ke resep</a>
+        {% endif %}
+        <span>{{ current_user["username"] }} ({{ "Pengelola" if current_user["peran"] == "pengelola" else "Pengguna" }})</span>
+        <form class="inline" method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="button" type="submit">Keluar</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Masuk</a>
+      {% endif %}
+    </nav>
+    <main>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section aria-label="Pesan">
+            {% for category, message in messages %}
+              <p class="messages {{ category }}" role="status">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer>Pengelolaan resep daerah.</footer>
+  </body>
+</html>

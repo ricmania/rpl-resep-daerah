@@ -28,6 +28,7 @@ def main() -> None:
                 "nama resep kosong",
                 "INSERT INTO resep (nama) VALUES ('   ')",
             ),
+            ("nama bahan kosong", "INSERT INTO bahan (nama) VALUES ('   ')"),
             (
                 "jumlah bahan negatif",
                 "INSERT INTO resep_bahan (resep_id, bahan_id, jumlah) "
@@ -50,7 +51,9 @@ def main() -> None:
             except sqlite3.IntegrityError:
                 print(f"OK ditolak: {description}")
             else:
-                raise AssertionError(f"GAGAL: pelanggaran tidak ditolak: {description}")
+                raise AssertionError(
+                    f"GAGAL: pelanggaran tidak ditolak: {description}"
+                )
 
         print(f"Semua {len(violations)} uji pelanggaran ditolak.")
     finally:

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Tambah bahan ke resep — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Tambah bahan ke resep</h1>
+  {% if error %}
+    <p class="error" role="alert">{{ error }}</p>
+  {% endif %}
+  {% if not resep %}
+    <p class="messages">Belum ada data resep. Tambahkan atau siapkan resep sebelum mencatat bahannya.</p>
+  {% endif %}
+  {% if not bahan %}
+    <p class="messages">Belum ada data bahan. Tambahkan bahan sebelum mencatatnya pada resep.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('resep_bahan_create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="resep_id">Resep</label>
+    <select id="resep_id" name="resep_id" required>
+      <option value="" disabled {% if not resep_id %}selected{% endif %}>Pilih resep</option>
+      {% for item in resep %}
+        <option value="{{ item['id'] }}"{{ ' selected' if resep_id|string == item['id']|string else '' }}>{{ item["nama"] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="bahan_id">Bahan</label>
+    <select id="bahan_id" name="bahan_id" required>
+      <option value="" disabled {% if not bahan_id %}selected{% endif %}>Pilih bahan</option>
+      {% for item in bahan %}
+        <option value="{{ item['id'] }}"{{ ' selected' if bahan_id|string == item['id']|string else '' }}>{{ item["nama"] }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="jumlah">Jumlah (opsional)</label>
+    <input id="jumlah" name="jumlah" type="number" min="0.0000000000000001" step="any" value="{{ jumlah }}">
+    <p class="muted">Jika diisi, jumlah harus lebih besar dari 0. Jumlah dan satuan boleh dikosongkan sesuai skema.</p>
+
+    <label for="satuan">Satuan (opsional)</label>
+    <input id="satuan" name="satuan" type="text" value="{{ satuan }}">
+
+    <div class="actions">
+      <button class="button primary" type="submit">Simpan</button>
+      <a class="button" href="{{ url_for('resep_bahan_list') }}">Batal</a>
+    </div>
+  </form>
+{% endblock %}

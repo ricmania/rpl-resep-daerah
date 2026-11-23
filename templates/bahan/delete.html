@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Konfirmasi hapus bahan — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Konfirmasi hapus bahan</h1>
+  <p>Hapus bahan <strong>{{ bahan["nama"] }}</strong> (ID {{ bahan["id"] }})?</p>
+  <p class="muted">Jika bahan sudah digunakan oleh resep, penghapusan akan ditolak.</p>
+  <form method="post" action="{{ url_for('bahan_delete', bahan_id=bahan['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="actions">
+      <button class="button danger" type="submit">Ya, hapus bahan</button>
+      <a class="button" href="{{ url_for('bahan_list') }}">Batal</a>
+    </div>
+  </form>
+{% endblock %}

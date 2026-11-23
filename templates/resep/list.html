@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Daftar resep — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Daftar resep</h1>
+  <p>Resep yang tersimpan.</p>
+  {% if current_user["peran"] == "pengelola" %}
+    <p><a class="button primary" href="{{ url_for('resep_create') }}">Catat resep</a></p>
+  {% endif %}
+
+  {% if resep %}
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">ID resep</th>
+          <th scope="col">Nama resep</th>
+          <th scope="col">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in resep %}
+          <tr>
+            <td>{{ item["id"] }}</td>
+            <td>{{ item["nama"] }}</td>
+            <td>
+              <a class="button" href="{{ url_for('resep_detail', resep_id=item['id']) }}">Buka rincian</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="messages">Belum ada resep yang tersimpan.</p>
+  {% endif %}
+{% endblock %}

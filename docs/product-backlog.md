@@ -1,24 +1,24 @@
-> **Backlog tentatif untuk latihan, bukan komitmen implementasi.** Prioritas dan fitur mengikuti usulan PRD dan perlu disetujui kelompok/klien. Setiap tugas dirancang maksimal satu hari kerja. Tugas implementasi yang bergantung pada pertanyaan terbuka PRD hanya dimulai setelah jawabannya disepakati.
+> Backlog tentatif dari PRD latihan; prioritas dan kriteria perlu disetujui kelompok/klien. Atribut wajib resep, bidang pencarian, serta aturan kecocokan belum ditetapkan.
 
-| Sprint | ID kebutuhan            | Tugas                                                                                              | Alasan                                                                                     |
-| ------ | ----------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1      | KF-01 (Must — usulan)   | Konfirmasi atribut resep yang wajib dan opsional bersama kelompok/klien (≤1 hari).                 | PRD belum menetapkan isian wajib; keputusan ini menjadi dasar penyimpanan dan validasi.    |
-| 1      | KF-01 (Must — usulan)   | Siapkan input untuk nama resep, bahan, dan langkah sesuai atribut yang telah disepakati (≤1 hari). | Mewujudkan kebutuhan mencatat resep tanpa menetapkan atribut tambahan.                     |
-| 1      | KF-01 (Must — usulan)   | Simpan resep yang memenuhi atribut wajib yang telah disepakati (≤1 hari).                          | Memenuhi kriteria resep tersimpan dengan nilai yang dimasukkan.                            |
-| 1      | KF-01 (Must — usulan)   | Tangani percobaan penyimpanan saat atribut wajib belum lengkap (≤1 hari).                          | Memenuhi kriteria pemberitahuan atribut belum lengkap dan resep tidak tersimpan.           |
-| 1      | KF-01 (Must — usulan)   | Periksa skenario penerimaan simpan berhasil dan atribut wajib belum lengkap (≤1 hari).             | Memastikan kedua kriteria M1 dapat diuji.                                                  |
-| 2      | KF-02 (Must — usulan)   | Konfirmasi bidang pencarian dan aturan kecocokan dengan kelompok/klien (≤1 hari).                  | PRD belum menetapkan apa yang dicari atau definisi kecocokan.                              |
-| 2      | KF-02 (Must — usulan)   | Tampilkan resep yang cocok dengan kata kunci menurut aturan yang disepakati (≤1 hari).             | Memenuhi kriteria hasil pencarian untuk resep yang cocok.                                  |
-| 2      | KF-02 (Must — usulan)   | Tampilkan keadaan tanpa hasil ketika tidak ada resep yang cocok (≤1 hari).                         | Memenuhi kriteria pencarian tanpa hasil.                                                   |
-| 2      | KF-02 (Must — usulan)   | Tampilkan nama, bahan, dan langkah saat pengguna membuka resep (≤1 hari).                          | Memenuhi kriteria membaca rincian resep.                                                   |
-| 2      | KF-02 (Must — usulan)   | Periksa skenario hasil cocok, tanpa hasil, dan rincian resep (≤1 hari).                            | Memastikan tiga kriteria M2 dapat diuji.                                                   |
-| 3      | KF-03 (Should — usulan) | Konfirmasi siapa yang boleh mengoreksi takaran dan apakah nilai lama perlu disimpan (≤1 hari).     | PRD menyisakan kewenangan dan riwayat koreksi sebagai pertanyaan terbuka.                  |
-| 3      | KF-03 (Should — usulan) | Simpan takaran baru pada resep yang dikoreksi sesuai keputusan yang disepakati (≤1 hari).          | Memenuhi kriteria koreksi takaran tersimpan.                                               |
-| 3      | KF-03 (Should — usulan) | Tampilkan takaran terbaru ketika resep dibuka kembali (≤1 hari).                                   | Memenuhi kriteria koreksi terlihat setelah disimpan.                                       |
-| 3      | KF-03 (Should — usulan) | Periksa skenario penyimpanan dan pembacaan kembali takaran yang dikoreksi (≤1 hari).               | Memastikan kriteria S1 dapat diuji.                                                        |
-| 3      | KF-04 (Should — usulan) | Konfirmasi apakah foto diunggah atau dirujuk, ketentuan berkas, dan hak akses (≤1 hari).           | Cara pengelolaan foto dan batas akses belum ditetapkan pada PRD.                           |
-| 3      | KF-04 (Should — usulan) | Kaitkan foto yang dipilih dengan resep yang dipilih sesuai keputusan penyimpanan (≤1 hari).        | Memenuhi kriteria hubungan foto dan resep tanpa menentukan mekanisme sebelum dikonfirmasi. |
-| 3      | KF-04 (Should — usulan) | Tampilkan hanya foto yang terkait dengan resep saat resep dibuka (≤1 hari).                        | Memenuhi kriteria foto berasal dari kaitan resep yang benar.                               |
-| 3      | KF-04 (Should — usulan) | Periksa skenario pengaitan dan penampilan foto pada resep terkait (≤1 hari).                       | Memastikan kriteria S2 dapat diuji.                                                        |
+| Sprint | ID kebutuhan | Tugas | Alasan / ketergantungan |
+|---|---|---|---|
+| 1 | KF-01 (Must — usulan) | Konfirmasi atribut resep yang wajib dan opsional bersama kelompok/klien. | Menjadi dasar penyimpanan dan validasi; belum diputuskan pada PRD. |
+| 1 | KF-01 (Must — usulan) | Siapkan input untuk nama resep, bahan, dan langkah sesuai atribut yang disepakati. | Mewujudkan kebutuhan mencatat resep tanpa menetapkan atribut bisnis tambahan. |
+| 1 | KF-01 (Must — usulan) | Simpan resep dengan atribut wajib yang telah disepakati. | Memenuhi kriteria resep tersimpan dengan nilai yang dimasukkan. |
+| 1 | KF-01 (Must — usulan) | Tolak penyimpanan saat atribut wajib belum lengkap dan tunjukkan isian yang kurang. | Memenuhi skenario validasi KF-01; tidak menyimpan data parsial. |
+| 1 | KF-01 (Must — usulan) | Uji penyimpanan berhasil dan atribut wajib belum lengkap. | Memastikan kedua skenario KF-01 dapat diperiksa. |
+| 2 | KF-02 (Must — usulan) | Konfirmasi bidang pencarian dan aturan kecocokan. | PRD belum menetapkan apa yang dicari atau definisi kecocokan. |
+| 2 | KF-02 (Must — usulan) | Tampilkan resep yang cocok dengan kata kunci menurut aturan yang disepakati. | Memenuhi skenario hasil pencarian. |
+| 2 | KF-02 (Must — usulan) | Tampilkan keadaan tanpa hasil ketika tidak ada resep yang cocok. | Memenuhi skenario pencarian tanpa hasil. |
+| 2 | KF-02 (Must — usulan) | Tampilkan nama, bahan, dan langkah saat resep dibuka. | Memenuhi skenario membaca rincian resep. |
+| 2 | KF-02 (Must — usulan) | Uji hasil cocok, tanpa hasil, dan rincian resep. | Memastikan skenario KF-02 dapat diperiksa. |
+| 3 | KF-03 (Should — usulan) | Konfirmasi siapa yang boleh mengoreksi takaran dan apakah nilai lama perlu disimpan. | Kewenangan dan riwayat koreksi masih menjadi pertanyaan terbuka. |
+| 3 | KF-03 (Should — usulan) | Simpan serta tampilkan kembali takaran resep yang dikoreksi sesuai keputusan. | Bergantung pada resep yang dapat dibuka dan aturan yang disepakati. |
+| 3 | KF-03 (Should — usulan) | Uji penyimpanan dan pembacaan kembali takaran yang dikoreksi. | Memastikan skenario KF-03 dapat diperiksa. |
+| 3 | KF-04 (Should — usulan) | Konfirmasi cara penyimpanan foto, batas berkas, dan hak akses. | Mekanisme foto belum ditetapkan pada PRD. |
+| 3 | KF-04 (Should — usulan) | Kaitkan foto pilihan dengan resep dan tampilkan hanya foto resep tersebut. | Bergantung pada keputusan cara penyimpanan dan resep yang tersedia. |
+| 3 | KF-04 (Should — usulan) | Uji pengaitan dan penampilan foto pada resep terkait. | Memastikan skenario KF-04 dapat diperiksa. |
 
-**Ketergantungan dan urutan:** KF-02 memakai resep yang telah disimpan pada KF-01. KF-03 dan KF-04 memakai resep yang dapat dibuka; karena itu direncanakan setelah KF-01/KF-02. Jadwal Sprint 2–3 bergantung pada penyelesaian, kapasitas, dan persetujuan tim.
+**Fitur yang dikerjakan pada branch ini:** KF-01, pencatatan resep. Aturan prototipe yang dipilih pengguna adalah nama wajib, minimal satu bahan, dan minimal satu langkah; ini belum menjadi persetujuan klien. KF-02 tetap menunggu kesepakatan bidang dan aturan pencarian.
+
+Urutan KF-02 bergantung pada data KF-01. KF-03 dan KF-04 bergantung pada resep yang dapat dibuka dan konfirmasi aturan bisnisnya.

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Data tidak ditemukan — Pengelolaan Resep{% endblock %}
+
+{% block content %}
+  <h1>Data tidak ditemukan</h1>
+  <p>Alamat atau data bahan yang diminta tidak ditemukan.</p>
+  <a class="button" href="{{ url_for('bahan_list') }}">Kembali ke daftar bahan</a>
+{% endblock %}
